@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}我的行程 - TripPlanner{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">我的行程表</h2>
+        <a href="{{ url_for('plan.new_itinerary') }}" class="btn btn-gradient">建立新行程</a>
+    </div>
+
+    <div class="row g-4">
+        {% for itinerary in itineraries %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-hover h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold text-primary">{{ itinerary.title }}</h5>
+                        {% if itinerary.is_shared %}
+                        <span class="badge bg-success rounded-pill">已分享</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-calendar3"></i> {{ itinerary.start_date.strftime('%Y-%m-%d') }} ~ {{ itinerary.end_date.strftime('%Y-%m-%d') }}
+                    </p>
+                    <p class="card-text">{{ itinerary.description[:80] }}...</p>
+                </div>
+                <div class="card-footer bg-white border-0 pt-0 pb-3">
+                    <a href="{{ url_for('plan.itinerary_detail', itinerary_id=itinerary.id) }}" class="btn btn-outline-primary w-100">檢視與編輯</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5 bg-light rounded-3">
+            <h4 class="text-muted mb-3">你還沒有建立任何行程</h4>
+            <a href="{{ url_for('plan.new_itinerary') }}" class="btn btn-gradient">開始規劃第一趟旅程</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ itinerary.title }} - TripPlanner{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首頁</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('plan.list_itineraries') }}">我的行程</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ itinerary.title }}</li>
+      </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h2 class="fw-bold mb-2">{{ itinerary.title }}</h2>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-calendar3"></i> {{ itinerary.start_date.strftime('%Y-%m-%d') }} ~ {{ itinerary.end_date.strftime('%Y-%m-%d') }}
+                    </p>
+                    <p class="mb-0">{{ itinerary.description }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('plan.edit_itinerary', itinerary_id=itinerary.id) }}" class="btn btn-outline-secondary btn-sm">設定</a>
+                    <form method="POST" action="{{ url_for('plan.delete_itinerary', itinerary_id=itinerary.id) }}" onsubmit="return confirm('確定要刪除這筆行程嗎？');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">刪除</button>
+                    </form>
+                </div>
+            </div>
+            
+            {% if itinerary.is_shared %}
+            <div class="mt-3 p-3 bg-light rounded border border-success">
+                <small class="text-success fw-bold"><i class="bi bi-link-45deg"></i> 分享連結：</small>
+                <div class="input-group input-group-sm mt-1">
+                    <input type="text" class="form-control bg-white" value="{{ request.host_url }}shared/{{ itinerary.share_code }}" readonly>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">行程與預算規劃</h4>
+        <a href="{{ url_for('plan.new_itinerary_item', itinerary_id=itinerary.id) }}" class="btn btn-primary btn-sm">+ 新增活動/景點</a>
+    </div>
+
+    {% set total_cost = namespace(value=0) %}
+    
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 10%;">天數</th>
+                    <th style="width: 15%;">時間</th>
+                    <th style="width: 25%;">活動/景點</th>
+                    <th style="width: 25%;">備註</th>
+                    <th style="width: 15%;">預估花費</th>
+                    <th style="width: 10%;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itinerary.items|sort(attribute='day_number') %}
+                {% set total_cost.value = total_cost.value + item.expected_cost %}
+                <tr>
+                    <td>Day {{ item.day_number }}</td>
+                    <td>
+                        {% if item.start_time %}{{ item.start_time.strftime('%H:%M') }}{% endif %}
+                        {% if item.start_time and item.end_time %} - {% endif %}
+                        {% if item.end_time %}{{ item.end_time.strftime('%H:%M') }}{% endif %}
+                    </td>
+                    <td>
+                        {% if item.place %}
+                            <a href="{{ url_for('main.place_detail', place_id=item.place.id) }}" class="text-decoration-none fw-bold">{{ item.place.name }}</a>
+                        {% else %}
+                            <span class="text-muted">自訂活動</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.note }}</td>
+                    <td>NT$ {{ item.expected_cost }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('plan.delete_itinerary_item', itinerary_id=itinerary.id, item_id=item.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="刪除"><small>×</small></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">目前還沒有安排任何活動，點擊右上方按鈕開始新增！</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="4" class="text-end">總預估花費：</td>
+                    <td colspan="2" class="text-danger">NT$ {{ total_cost.value }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

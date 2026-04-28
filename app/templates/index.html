@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}TripPlanner - 輕鬆規劃你的旅程{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-4">世界那麼大，一起去看看</h1>
+        <p class="lead mb-4 text-muted">TripPlanner 讓你輕鬆安排行程、計算預算、分享回憶。<br>現在就開始你的下一趟旅行。</p>
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('plan.new_itinerary') }}" class="btn btn-gradient btn-lg">立即建立行程</a>
+        {% else %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-gradient btn-lg">免費註冊開始使用</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container py-5">
+    <h2 class="text-center fw-bold mb-5">精選景點</h2>
+    <div class="row g-4">
+        {% for place in places %}
+        <div class="col-md-4">
+            <div class="card card-hover h-100">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ place.name }}</h5>
+                    <p class="card-text text-muted">{{ place.description[:100] }}...</p>
+                    <a href="{{ url_for('main.place_detail', place_id=place.id) }}" class="btn btn-outline-primary btn-sm">查看詳情</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center text-muted">
+            <p>目前尚無精選景點，您可以先前往探索。</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

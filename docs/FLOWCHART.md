@@ -1,79 +1,84 @@
-# 流程圖設計文件：食譜管理系統
+# 流程圖設計 (Flowchart) - 旅遊網站系統
 
-本文件根據產品需求文件 (PRD) 與系統架構文件，視覺化使用者在食譜管理系統中的操作流程、系統背後的處理步驟，以及功能與路由的對照表。
+本文件視覺化了使用者的操作路徑與系統內部的資料流，確保各項功能與系統架構的一致性。
 
-## 1. 使用者流程圖（User Flow）
+## 1. 使用者流程圖 (User Flow)
 
-以下流程圖說明當使用者開啟網頁後，可以執行的各項功能及頁面轉換路徑：
+此流程圖展示了使用者進入網站後，如何瀏覽景點、登入系統以及管理旅遊行程的完整路徑。
 
 ```mermaid
 flowchart LR
-    A([使用者開啟網站]) --> B[首頁 - 食譜列表]
+    A([使用者開啟網頁]) --> B[首頁 - 景點探索與精選行程]
+    B --> C{是否登入？}
+    C -->|未登入| D[瀏覽景點介紹]
+    C -->|未登入| E[登入 / 註冊頁面]
+    E -->|登入成功| F[個人儀表板 (Dashboard)]
     
-    B --> C{選擇欲執行的功能}
+    C -->|已登入| F
     
-    %% 新增食譜路線
-    C -->|點擊「新增食譜」| D[填寫新增表單頁面]
-    D -->|送出表單| B
+    F --> G{要執行什麼操作？}
+    G -->|瀏覽景點| D
+    D -->|發表心得| H[填寫心得與評價表單]
     
-    %% 搜尋/篩選路線
-    C -->|輸入「關鍵字 / 食材」| E[呈現篩選後的列表]
-    E --> C
+    G -->|管理行程| I[行程表列表頁]
+    I --> J{行程操作}
+    J -->|新增| K[填寫行程基本資料]
+    J -->|查看/編輯| L[進入單一行程詳細頁]
+    J -->|刪除| M[刪除行程]
     
-    %% 查看與編輯/刪除路線
-    C -->|點擊某個「食譜項目」| F[食譜明細頁面]
-    F --> G{在明細頁中選擇操作}
-    
-    G -->|返回| B
-    G -->|點擊「編輯食譜」| H[填寫編輯表單頁面]
-    H -->|送出表單| F
-    G -->|點擊「刪除食譜」| I[確認並刪除]
-    I -->|刪除成功| B
+    L --> N{單一行程操作}
+    N -->|新增活動/景點| O[選擇景點加入行程]
+    N -->|管理預算| P[設定各項目預估花費]
+    N -->|分享| Q[產生分享連結 (唯讀/共編)]
 ```
 
-## 2. 系統序列圖（Sequence Diagram）
+## 2. 系統序列圖 (Sequence Diagram)
 
-以下序列圖以核心功能**「新增食譜」**為例，展示從使用者介面送出資料到成功寫入資料庫並重導向的完整過程：
+以下以 **「使用者新增一筆旅遊行程」** 為例，展示瀏覽器、Flask 後端與資料庫之間的互動過程。
 
 ```mermaid
 sequenceDiagram
     actor User as 使用者
-    participant Browser as 瀏覽器 (模板渲染)
-    participant Flask Route as 路由 (Controller)
-    participant Model as 邏輯模型 (Model)
-    participant DB as SQLite 資料庫
+    participant Browser as 瀏覽器
+    participant Flask as Flask Route
+    participant Model as SQLAlchemy Model
+    participant DB as SQLite
 
-    User->>Browser: 在表單頁面填妥食譜資訊並點擊送出
-    Browser->>Flask Route: 發送 POST /recipes 請求 (攜帶表單資料)
+    User->>Browser: 填寫「新增行程」表單並送出
+    Browser->>Flask: POST /itineraries/new (表單資料)
     
-    Note over Flask Route, DB: 開始處理新增邏輯
+    Note over Flask: 驗證使用者是否已登入與表單資料格式
     
-    Flask Route->>Model: 呼叫 Recipe.create(data) 傳入解析後的資料
-    Model->>DB: 執行 SQL INSERT INTO recipes ... 
-    DB-->>Model: 回傳寫入成功訊息
-    Model-->>Flask Route: 回傳新建立的 Recipe 物件
+    Flask->>Model: 建立 Itinerary 物件
+    Model->>DB: 執行 INSERT INTO itineraries 語句
+    DB-->>Model: 成功回傳 (返回新行程的 ID)
+    Model-->>Flask: 建立成功
     
-    Note over Flask Route, Browser: 處理畫面重導向
-    
-    Flask Route-->>Browser: 回傳 302 Redirect 至首頁 (食譜列表)
-    Browser->>Flask Route: 發送 GET / 請求
-    Flask Route->>Model: 取得最新所有食譜列表
-    Model->>DB: 執行 SELECT * FROM recipes
-    DB-->>Model: 回傳新列資料
-    Model-->>Flask Route: 列表資料
-    Flask Route-->>Browser: 使用最新資料重新渲染 index.html (首頁)
+    Flask-->>Browser: HTTP 302 重導向到行程詳細頁 (/itineraries/{id})
+    Browser->>User: 顯示剛建立的行程畫面
 ```
 
 ## 3. 功能清單對照表
 
-對應上述流程與 PRD 需求，以下為系統功能對應的 URL 路徑與 HTTP 方法整理，提供後續 API/路由設計的參考：
+本表列出了系統的主要功能、對應的 URL 路徑與 HTTP 方法，以供後續開發與 API 設計參考。
 
-| 功能項目說明 | HTTP 方法 | 預計對應的 URL 路徑 | View (Jinja2) | 備註 |
-| --- | :---: | --- | --- | --- |
-| **首頁 / 所有食譜總覽** | `GET` | `/` 或 `/recipes` | `index.html` | 可結合查詢參數 `?q=關鍵字` 處理搜尋與食材推薦功能。 |
-| **進入新增食譜表單頁** | `GET` | `/recipes/new` | `form.html` | 呈現空白的輸入表單。 |
-| **提交新增食譜資料** | `POST` | `/recipes` | *(處理無畫面)* | 處理完後 302 重導向回首頁。 |
-| **查看單一食譜明細** | `GET` | `/recipes/<id>` | `show.html` | 顯示特定 ID 的食譜完整步驟與內容。 |
-| **進入編輯食譜表單頁** | `GET` | `/recipes/<id>/edit` | `form.html` | 呈現帶有原始資料的編輯表單。 |
-| **提交更新的食譜資料** | `POST` | `/recipes/<id>/update` | *(處理無畫面)* | 使用 HTML form 故用 POST，更新完成後重導回明細頁。 |
-| **確定刪除食譜** | `POST` | `/recipes/<id>/delete` | *(處理無畫面)* | 使用 form 觸發 POST，刪除完成後重導回首頁。 |
+| 功能模組 | 具體功能 | URL 路徑 | HTTP 方法 |
+| :--- | :--- | :--- | :--- |
+| **會員系統** | 使用者註冊頁面 | `/auth/register` | GET |
+| | 送出註冊資料 | `/auth/register` | POST |
+| | 使用者登入頁面 | `/auth/login` | GET |
+| | 送出登入資料 | `/auth/login` | POST |
+| | 登出 | `/auth/logout` | GET / POST |
+| **首頁與景點** | 網站首頁 | `/` | GET |
+| | 景點列表 | `/places` | GET |
+| | 景點詳細頁 | `/places/<place_id>` | GET |
+| | 送出景點評價 | `/places/<place_id>/reviews` | POST |
+| **行程管理** | 我的行程列表 | `/itineraries` | GET |
+| | 建立新行程頁面 | `/itineraries/new` | GET |
+| | 送出新行程 | `/itineraries/new` | POST |
+| | 查看單一行程 | `/itineraries/<itinerary_id>` | GET |
+| | 編輯單一行程 | `/itineraries/<itinerary_id>/edit` | GET, POST |
+| | 刪除單一行程 | `/itineraries/<itinerary_id>/delete` | POST |
+| **行程細節** | 新增活動/預算至行程 | `/itineraries/<itinerary_id>/items/new`| POST |
+| | 刪除活動/預算項目 | `/itineraries/<itinerary_id>/items/<item_id>/delete`| POST |
+| **分享與共編** | 查看分享的行程 | `/shared/<share_code>` | GET |

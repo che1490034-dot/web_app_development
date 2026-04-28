@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}探索景點 - TripPlanner{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="fw-bold mb-4">探索熱門景點</h2>
+    <div class="row g-4">
+        {% for place in places %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-hover h-100">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ place.name }}</h5>
+                    <p class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> {{ place.address or '暫無地址' }}</p>
+                    <p class="card-text">{{ place.description[:100] }}...</p>
+                    <a href="{{ url_for('main.place_detail', place_id=place.id) }}" class="btn btn-outline-primary btn-sm mt-2">查看詳細與評價</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center text-muted">
+            <p>目前系統中沒有任何景點資料。</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

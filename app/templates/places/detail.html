@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ place.name }} - TripPlanner{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首頁</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('main.list_places') }}">探索景點</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ place.name }}</li>
+      </ol>
+    </nav>
+
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <h1 class="fw-bold mb-3">{{ place.name }}</h1>
+            <p class="text-muted"><i class="bi bi-geo-alt"></i> 地址：{{ place.address or '暫無資料' }}</p>
+            <hr>
+            <div class="mb-5">
+                <h4>景點介紹</h4>
+                <p class="lh-lg">{{ place.description }}</p>
+            </div>
+
+            <div class="mb-4">
+                <h4>網友評價 ({{ place.reviews|length }})</h4>
+                {% if place.reviews %}
+                    <div class="list-group list-group-flush mb-4">
+                        {% for review in place.reviews %}
+                        <div class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0 fw-bold">{{ review.author.username }}</h6>
+                                <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <div class="text-warning mb-2">
+                                {% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}☆{% endfor %}
+                            </div>
+                            <p class="mb-0 text-muted">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted my-4">目前還沒有評價，快來成為第一個留下心得的人吧！</p>
+                {% endif %}
+                
+                {% if session.get('user_id') %}
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">留下你的評價</h5>
+                        <form method="POST" action="{{ url_for('main.add_review', place_id=place.id) }}">
+                            <div class="mb-3">
+                                <label class="form-label">評分 (1-5)</label>
+                                <select class="form-select" name="rating" required>
+                                    <option value="5">5 - 非常棒</option>
+                                    <option value="4">4 - 很好</option>
+                                    <option value="3" selected>3 - 普通</option>
+                                    <option value="2">2 - 待加強</option>
+                                    <option value="1">1 - 糟糕</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">心得內容</label>
+                                <textarea class="form-control" name="comment" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">送出評價</button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary">
+                    <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold">登入</a> 後即可發表評價。
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card card-hover border-0 shadow-sm sticky-top" style="top: 100px;">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">想去這裡嗎？</h5>
+                    <p class="text-muted mb-4">趕快建立行程，將 {{ place.name }} 加入你的旅遊計畫！</p>
+                    <a href="{{ url_for('plan.new_itinerary') }}" class="btn btn-gradient w-100">立即規劃行程</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
